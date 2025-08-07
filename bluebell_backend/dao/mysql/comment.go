@@ -10,7 +10,7 @@ func CreateComment(comment *models.Comment) (err error) {
 	sqlStr := `insert into comment(
 	comment_id, content, post_id, author_id, parent_id)
 	values(?,?,?,?,?)`
-	_, err = db.Exec(sqlStr, comment.CommentID, comment.Content, comment.PostID,
+	_, err = Db.Exec(sqlStr, comment.CommentID, comment.Content, comment.PostID,
 		comment.AuthorID, comment.ParentID)
 	if err != nil {
 		zap.L().Error("insert comment failed", zap.Error(err))
@@ -29,7 +29,7 @@ func GetCommentListByIDs(CommentList models.CommentList) (comments []*models.Com
 
 	comments = make([]*models.Comment, 0, CommentList.Size)
 	// 注意：现在只有一个占位符 (?)，所以只传入 PostID
-	err = db.Select(&comments, sqlStr, CommentList.PostID, (CommentList.Page-1)*CommentList.Size, CommentList.Size)
+	err = Db.Select(&comments, sqlStr, CommentList.PostID, (CommentList.Page-1)*CommentList.Size, CommentList.Size)
 	if err != nil {
 		zap.L().Error("查询帖子下评论失败", zap.Error(err))
 		return nil, err

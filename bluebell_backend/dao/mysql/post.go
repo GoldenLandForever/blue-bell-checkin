@@ -13,7 +13,7 @@ import (
 // GetPostTotalCount 查询数据库帖子总数
 func GetPostTotalCount() (count int64, err error) {
 	sqlStr := `select count(post_id) from post`
-	err = db.Get(&count, sqlStr)
+	err = Db.Get(&count, sqlStr)
 	if err != nil {
 		zap.L().Error("db.Get(&count, sqlStr) failed", zap.Error(err))
 		return 0, err
@@ -24,7 +24,7 @@ func GetPostTotalCount() (count int64, err error) {
 // GetCommunityPostTotalCount 根据社区id查询数据库帖子总数
 func GetCommunityPostTotalCount(communityID uint64) (count int64, err error) {
 	sqlStr := `select count(post_id) from post where community_id = ?`
-	err = db.Get(&count, sqlStr, communityID)
+	err = Db.Get(&count, sqlStr, communityID)
 	if err != nil {
 		zap.L().Error("db.Get(&count, sqlStr) failed", zap.Error(err))
 		return 0, err
@@ -38,7 +38,7 @@ func CreatePost(post *models.Post) (err error) {
 	sqlStr := `insert into post(
 	post_id, title, content, author_id, community_id)
 	values(?,?,?,?,?)`
-	_, err = db.Exec(sqlStr, post.PostID, post.Title,
+	_, err = Db.Exec(sqlStr, post.PostID, post.Title,
 		post.Content, post.AuthorId, post.CommunityID)
 	if err != nil {
 		zap.L().Error("insert post failed", zap.Error(err))
@@ -54,7 +54,7 @@ func GetPostByID(pid uint64) (post *models.Post, err error) {
 	sqlStr := `select post_id, title, content, author_id, community_id, status, create_time, update_time
 	from post
 	where post_id = ?`
-	err = db.Get(post, sqlStr, pid)
+	err = Db.Get(post, sqlStr, pid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(ErrorInvalidID)
@@ -77,8 +77,8 @@ func GetPostListByIDs(ids []string) (postList []*models.Post, err error) {
 		return
 	}
 	// sqlx.In 返回带 `?` bindvar的查询语句, 我们使用Rebind()重新绑定它
-	query = db.Rebind(query)
-	err = db.Select(&postList, query, args...)
+	query = Db.Rebind(query)
+	err = Db.Select(&postList, query, args...)
 	return
 }
 
@@ -91,7 +91,7 @@ func GetPostList(page, size int64) (posts []*models.Post, err error) {
 	limit ?,?
 	`
 	posts = make([]*models.Post, 0, 2) // 0：长度  2：容量
-	err = db.Select(&posts, sqlStr, (page-1)*size, size)
+	err = Db.Select(&posts, sqlStr, (page-1)*size, size)
 	return
 }
 
@@ -109,7 +109,7 @@ func GetPostListByKeywords(p *models.ParamPostList) (posts []*models.Post, err e
 	// %keyword%
 	p.Search = "%" + p.Search + "%"
 	posts = make([]*models.Post, 0, 2) // 0：长度  2：容量
-	err = db.Select(&posts, sqlStr, p.Search, p.Search, (p.Page-1)*p.Size, p.Size)
+	err = Db.Select(&posts, sqlStr, p.Search, p.Search, (p.Page-1)*p.Size, p.Size)
 	return
 }
 
@@ -123,6 +123,6 @@ func GetPostListTotalCount(p *models.ParamPostList) (count int64, err error) {
 	`
 	// %keyword%
 	p.Search = "%" + p.Search + "%"
-	err = db.Get(&count, sqlStr, p.Search, p.Search)
+	err = Db.Get(&count, sqlStr, p.Search, p.Search)
 	return
 }

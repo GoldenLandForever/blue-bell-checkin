@@ -10,11 +10,13 @@ import (
 	"bluebell_backend/routers"
 	"bluebell_backend/settings"
 	"fmt"
+	"go.uber.org/zap"
 )
 
 // @host 127.0.0.1:8081
 // @BasePath /api/v1/
 func main() {
+
 	//var confFile string
 	//flag.StringVar(&confFile, "conf", "./conf/config.yaml", "配置文件")
 	//flag.Parse()
@@ -39,6 +41,15 @@ func main() {
 	}
 
 	defer redis.Close()
+
+	// 初始化定时任务
+
+	if err := redis.SyncExpiringVotes(7 * 24 * 3600 * 365); err != nil {
+		zap.L().Error("同步失败", zap.Error(err))
+	} else {
+		zap.L().Info("同步成功")
+	}
+
 	// 程序退出时关闭Kafka客户端
 	defer kafka.CloseKafka()
 	// 雪花算法生成分布式ID

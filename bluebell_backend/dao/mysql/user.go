@@ -25,7 +25,7 @@ func encryptPassword(data []byte) (result string) {
 func CheckUserExist(username string) (error error) {
 	sqlStr := `select count(user_id) from user where username = ?`
 	var count int
-	if err := db.Get(&count, sqlStr, username); err != nil {
+	if err := Db.Get(&count, sqlStr, username); err != nil {
 		return err
 	}
 	if count > 0 {
@@ -40,14 +40,14 @@ func InsertUser(user models.User) (error error) {
 	user.Password = encryptPassword([]byte(user.Password))
 	// 执行SQL语句入库
 	sqlstr := `insert into user(user_id,username,password,email,gender) values(?,?,?,?,?)`
-	_, err := db.Exec(sqlstr, user.UserID, user.UserName, user.Password, user.Email, user.Gender)
+	_, err := Db.Exec(sqlstr, user.UserID, user.UserName, user.Password, user.Email, user.Gender)
 	return err
 }
 
 func Register(user *models.User) (err error) {
 	sqlStr := "select count(user_id) from user where username = ?"
 	var count int64
-	err = db.Get(&count, sqlStr, user.UserName)
+	err = Db.Get(&count, sqlStr, user.UserName)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
@@ -64,7 +64,7 @@ func Register(user *models.User) (err error) {
 	password := encryptPassword([]byte(user.Password))
 	// 把用户插入数据库
 	sqlStr = "insert into user(user_id, username, password) values (?,?,?)"
-	_, err = db.Exec(sqlStr, userID, user.UserName, password)
+	_, err = Db.Exec(sqlStr, userID, user.UserName, password)
 	return
 }
 
@@ -72,7 +72,7 @@ func Register(user *models.User) (err error) {
 func Login(user *models.User) (err error) {
 	originPassword := user.Password // 记录一下原始密码(用户登录的密码)
 	sqlStr := "select user_id, username, password from user where username = ?"
-	err = db.Get(user, sqlStr, user.UserName)
+	err = Db.Get(user, sqlStr, user.UserName)
 	// 查询数据库出错
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -93,6 +93,6 @@ func Login(user *models.User) (err error) {
 func GetUserByID(id uint64) (user *models.User, err error) {
 	user = new(models.User)
 	sqlStr := `select user_id, username from user where user_id = ?`
-	err = db.Get(user, sqlStr, id)
+	err = Db.Get(user, sqlStr, id)
 	return
 }

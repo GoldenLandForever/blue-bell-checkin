@@ -11,7 +11,7 @@ import (
 // GetCommunityList 查询分类社区列表
 func GetCommunityList() (communityList []*models.Community, err error) {
 	sqlStr := "select community_id, community_name from community"
-	err = db.Select(&communityList, sqlStr)
+	err = Db.Select(&communityList, sqlStr)
 	if err == sql.ErrNoRows { // 查询为空
 		zap.L().Warn("there is no community in db")
 		err = nil
@@ -24,7 +24,7 @@ func GetCommunityNameByID(idStr string) (community *models.Community, err error)
 	sqlStr := `select community_id, community_name
 	from community
 	where community_id = ?`
-	err = db.Get(community, sqlStr, idStr)
+	err = Db.Get(community, sqlStr, idStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(ErrorInvalidID)
@@ -42,7 +42,7 @@ func GetCommunityByID(id uint64) (*models.CommunityDetailRes, error) {
 	sqlStr := `select community_id, community_name, introduction, create_time
 	from community
 	where community_id = ?`
-	err := db.Get(community, sqlStr, id)
+	err := Db.Get(community, sqlStr, id)
 	if err != nil {
 		if err == sql.ErrNoRows { // 查询为空
 			return nil, errors.New(ErrorInvalidID) // 无效的ID return
