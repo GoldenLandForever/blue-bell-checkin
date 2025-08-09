@@ -12,7 +12,7 @@ func getIDsFormKey(key string, page, size int64) ([]string, error) {
 	start := (page - 1) * size
 	end := start + size - 1
 	// 3.ZRevRange 按照分数从大到小的顺序查询指定数量的元素
-	return client.ZRevRange(key, start, end).Result()
+	return Client.ZRevRange(key, start, end).Result()
 }
 
 // GetPostIDsInOrder 升级版投票列表接口：按创建时间排序 或者 按照 分数排序 (查询出的ids已经根据order从大到小排序)
@@ -33,7 +33,7 @@ func GetPostVoteData(ids []string) (data []int64, err error) {
 	for _, id := range ids {
 		key := KeyPostVotedZSetPrefix + id
 		// 查找key中分数是1的元素数量 -> 统计每篇帖子的赞成票的数量
-		v := client.ZCount(key, "1", "1").Val()
+		v := Client.ZCount(key, "1", "1").Val()
 		data = append(data, v)
 	}
 	// 使用 pipeline一次发送多条命令减少RTT
@@ -58,7 +58,7 @@ func GetPostVoteData(ids []string) (data []int64, err error) {
 func GetPostVoteNum(ids uint64) (data int64, err error) {
 	key := KeyPostVotedZSetPrefix + strconv.Itoa(int(ids))
 	// 查找key中分数是1的元素数量 -> 统计每篇帖子的赞成票的数量
-	data = client.ZCount(key, "1", "1").Val()
+	data = Client.ZCount(key, "1", "1").Val()
 	return data, nil
 }
 
@@ -86,12 +86,12 @@ func GetCommunityPostIDsInOrder(p *models.ParamPostList) ([]string, error) {
 
 	// 利用缓存key减少zinterstore执行的次数 缓存key
 	key := orderkey + strconv.Itoa(int(p.CommunityID))
-	if client.Exists(key).Val() < 1 {
+	if Client.Exists(key).Val() < 1 {
 		// 不存在，需要计算
-		pipeline := client.Pipeline()
+		pipeline := Client.Pipeline()
 		pipeline.ZInterStore(key, redis.ZStore{
 			Aggregate: "MAX", // 将两个zset函数聚合的时候 求最大值
-		}, cKey, orderkey) // zinterstore 计算
+		}, cKey, orderkey)                   // zinterstore 计算
 		pipeline.Expire(key, 60*time.Second) // 设置超时时间
 		_, err := pipeline.Exec()
 		if err != nil {

@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	client *redis.Client
+	Client *redis.Client
 	Nil    = redis.Nil
 )
 
@@ -23,7 +23,7 @@ type StringStringMapCmd = redis.StringStringMapCmd
 
 // Init 初始化连接
 func Init(cfg *settings.RedisConfig) (err error) {
-	client = redis.NewClient(&redis.Options{
+	Client = redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password:     cfg.Password, // no password set
 		DB:           cfg.DB,       // use default DB
@@ -31,7 +31,7 @@ func Init(cfg *settings.RedisConfig) (err error) {
 		MinIdleConns: cfg.MinIdleConns,
 	})
 
-	_, err = client.Ping().Result()
+	_, err = Client.Ping().Result()
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func Init(cfg *settings.RedisConfig) (err error) {
 
 func SyncExpiringVotes(expire int) (err error) {
 	// 从Redis中获取所有过期的投票键
-	iter := client.Scan(0, "*voted:*", 1000).Iterator()
+	iter := Client.Scan(0, "*voted:*", 1000).Iterator()
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func SyncExpiringVotes(expire int) (err error) {
 	for iter.Next() {
 		key := iter.Val()
 		// 检查键是否过期
-		ttl, err := client.TTL(key).Result()
+		ttl, err := Client.TTL(key).Result()
 		if err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ func SyncExpiringVotes(expire int) (err error) {
 		// 如果过期时间小于当前时间，说明键已过期
 		if ttl <= 0 {
 			// 从Redis中删除过期键
-			if err := client.Del(key).Err(); err != nil {
+			if err := Client.Del(key).Err(); err != nil {
 				continue
 			}
 		}
@@ -77,7 +77,7 @@ func persistVotes(key string) {
 	// 成功持久化后删除Redis键
 	postID := strings.Split(key, "voted:")[1]
 	// 从Redis中获取投票信息
-	members, err := client.ZRangeWithScores(key, 0, -1).Result()
+	members, err := Client.ZRangeWithScores(key, 0, -1).Result()
 	if err != nil {
 		zap.L().Error("获取ZSet成员失败", zap.Error(err))
 		return
@@ -110,5 +110,5 @@ func persistVotes(key string) {
 }
 
 func Close() {
-	_ = client.Close()
+	_ = Client.Close()
 }

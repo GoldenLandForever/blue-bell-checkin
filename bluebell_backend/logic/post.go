@@ -7,6 +7,7 @@ import (
 	"bluebell_backend/pkg/snowflake"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -45,9 +46,44 @@ func CreatePost(post *models.Post) (err error) {
 }
 
 // GetPostById 根据Id查询帖子详情
+// GetPostById 根据Id查询帖子详情
 func GetPostById(postID uint64) (data *models.ApiPostDetail, err error) {
 	// 查询并组合我们接口想用的数据
 	// 查询帖子信息
+	//先查redis,没有查数据库
+	voteNum, err := redis.GetPostVoteNum(postID)
+	redisKey := redis.KeyPostInfoHashPrefix + strconv.FormatUint(postID, 10)
+	redispost, err := redis.Client.HGetAll(redisKey).Result()
+	if err == nil && len(redispost) > 0 {
+		// 解析Redis中的数据
+		authorID, _ := strconv.ParseUint(redispost["author_id"], 10, 64)
+		communityID, _ := strconv.ParseUint(redispost["community_id"], 10, 64)
+
+		// 解析时间字符串
+		createTime, _ := time.Parse("2006-01-02 15:04:05", redispost["create_time"])
+
+		return &models.ApiPostDetail{
+			Post: &models.Post{
+				PostID:      postID,
+				AuthorId:    authorID,
+				CommunityID: communityID,
+				Status:      1, // 默认状态
+				Title:       redispost["title"],
+				Content:     redispost["content"],
+				CreateTime:  createTime,
+			},
+			CommunityDetailRes: &models.CommunityDetailRes{
+				CommunityID:   communityID,
+				CommunityName: redispost["community_name"],
+				Introduction:  redispost["introduction"],
+				CreateTime:    redispost["create_time"],
+			},
+			VoteNum:    voteNum,
+			AuthorName: redispost["author_name"],
+		}, nil
+	}
+
+	// Redis中没有，查询数据库
 	post, err := mysql.GetPostByID(postID)
 	if err != nil {
 		zap.L().Error("mysql.GetPostByID(postID) failed",
@@ -72,7 +108,6 @@ func GetPostById(postID uint64) (data *models.ApiPostDetail, err error) {
 		return
 	}
 	// 根据帖子id查询帖子的投票数
-	voteNum, err := redis.GetPostVoteNum(postID)
 
 	// 接口数据拼接
 	data = &models.ApiPostDetail{

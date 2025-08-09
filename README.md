@@ -2,17 +2,93 @@
 
 # 基于bluebell-plus重新开发
 
-加入积分系统 （Kafka） 
+- [x] 加入积分系统 （Kafka） 
 
-重写评论系统
+- [x] 重写评论系统
 
-添加redis预热
+- [x] 添加redis预热
 
 go 并发查
 
 加入签到系统
 
-热门帖子redis查询
+- [x] 热门帖子redis查询
+
+压测报告：
+
+```shell
+go-wrk -c 50 -d 30 -T 5000 http://localhost:8081/api/v1/posts
+Running 30s test @ http://localhost:8081/api/v1/posts
+  50 goroutine(s) running concurrently
+59977 requests in 30.0754985s, 6.47MB read
+Requests/sec:           1994.21
+Transfer/sec:           220.26KB
+Overall Requests/sec:   1989.03
+Overall Transfer/sec:   219.69KB
+Fastest Request:        0s
+Avg Req Time:           25.072ms
+Slowest Request:        855.327ms
+Number of Errors:       0
+10%:                    0s
+50%:                    555µs
+75%:                    614µs
+99%:                    1.015ms
+75%:                    614µs
+99%:                    1.015ms
+99.9%:                  1.051ms
+99.9999%:               1.06ms
+99.99999%:              1.06ms
+stddev:                 66.508ms
+```
+
+```shell
+go-wrk -c 100 -d 10 -T 5000 http://localhost:8081/api/v1/post/1
+Running 10s test @ http://localhost:8081/api/v1/post/1
+  100 goroutine(s) running concurrently
+21279 requests in 10.098893029s, 2.29MB read
+Requests/sec:           2107.06
+Transfer/sec:           232.57KB
+Overall Requests/sec:   2083.20
+Overall Transfer/sec:   229.94KB
+Fastest Request:        0s
+Avg Req Time:           47.459ms
+Slowest Request:        355.535ms
+Number of Errors:       0
+10%:                    0s
+50%:                    562µs
+75%:                    658µs
+99%:                    4.195ms
+99.9%:                  4.909ms
+99.9999%:               4.909ms
+99.99999%:              4.909ms
+stddev:                 80.803ms
+```
+
+```
+go-wrk -c 50 -d 30 -T 5000 http://localhost:8081/api/v1/posts2
+Running 30s test @ http://localhost:8081/api/v1/posts2
+  50 goroutine(s) running concurrently
+57655 requests in 30.105360312s, 6.22MB read
+Requests/sec:           1915.11
+Transfer/sec:           211.61KB
+Overall Requests/sec:   1908.93
+Overall Transfer/sec:   210.93KB
+Fastest Request:        0s
+Avg Req Time:           26.107ms
+Slowest Request:        954.463ms
+Number of Errors:       0
+10%:                    0s
+50%:                    567µs
+75%:                    752µs
+99%:                    4.369ms
+99.9%:                  4.496ms
+99.9999%:               4.505ms
+99.99999%:              4.505ms
+stddev:                 69.926ms
+
+```
+
+
 
 
 

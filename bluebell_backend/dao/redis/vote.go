@@ -47,7 +47,7 @@ v=-1时，有两种情况
 func VoteForPost(userID string, postID string, v float64) (err error) {
 	// 1.判断投票限制
 	// 去redis取帖子发布时间
-	postTime := client.ZScore(KeyPostTimeZSet, postID).Val()
+	postTime := Client.ZScore(KeyPostTimeZSet, postID).Val()
 	if float64(time.Now().Unix())-postTime > OneWeekInSeconds { // 超过一个星期就不允许投票了
 		// 不允许投票了
 		return ErrorVoteTimeExpire
@@ -56,7 +56,7 @@ func VoteForPost(userID string, postID string, v float64) (err error) {
 	// 2和3 需要放到一个pipeline事务中操作
 	// 判断是否已经投过票 查当前用户给当前帖子的投票记录
 	key := KeyPostVotedZSetPrefix + postID
-	ov := client.ZScore(key, userID).Val()
+	ov := Client.ZScore(key, userID).Val()
 
 	// 更新：如果这一次投票的值和之前保存的值一致，就提示不允许重复投票
 	if v == ov {
@@ -69,7 +69,7 @@ func VoteForPost(userID string, postID string, v float64) (err error) {
 		op = -1
 	}
 	diffAbs := math.Abs(ov - v)                // 计算两次投票的差值
-	pipeline := client.TxPipeline()            // 事务操作
+	pipeline := Client.TxPipeline()            // 事务操作
 	incrementScore := VoteScore * diffAbs * op // 计算分数（新增）
 	// ZIncrBy 用于将有序集合中的成员分数增加指定数量
 	_, err = pipeline.ZIncrBy(KeyPostScoreZSet, incrementScore, postID).Result() // 更新分数
@@ -78,7 +78,7 @@ func VoteForPost(userID string, postID string, v float64) (err error) {
 	}
 	// 3、记录用户为该帖子投票的数据
 	if v == 0 {
-		_, err = client.ZRem(key, postID).Result()
+		_, err = Client.ZRem(key, postID).Result()
 	} else {
 		pipeline.ZAdd(key, redis.Z{ // 记录已投票
 			Score:  v, // 赞成票还是反对票
@@ -124,7 +124,7 @@ func CreatePost(postID, userID uint64, title, summary string, CommunityID uint64
 	}
 
 	// 事务操作
-	pipeline := client.TxPipeline()
+	pipeline := Client.TxPipeline()
 	// 投票 zSet
 	pipeline.ZAdd(votedKey, redis.Z{ // 作者默认投赞成票
 		Score:  1,
@@ -157,10 +157,10 @@ func GetPost(order string, page int64) []map[string]string {
 	}
 	start := (page - 1) * PostPerAge
 	end := start + PostPerAge - 1
-	ids := client.ZRevRange(key, start, end).Val()
+	ids := Client.ZRevRange(key, start, end).Val()
 	postList := make([]map[string]string, 0, len(ids))
 	for _, id := range ids {
-		postData := client.HGetAll(KeyPostInfoHashPrefix + id).Val()
+		postData := Client.HGetAll(KeyPostInfoHashPrefix + id).Val()
 		postData["id"] = id
 		postList = append(postList, postData)
 	}
@@ -171,11 +171,11 @@ func GetPost(order string, page int64) []map[string]string {
 func GetCommunityPost(communityName, orderKey string, page int64) []map[string]string {
 	key := orderKey + communityName // 创建缓存键
 
-	if client.Exists(key).Val() < 1 {
-		client.ZInterStore(key, redis.ZStore{
+	if Client.Exists(key).Val() < 1 {
+		Client.ZInterStore(key, redis.ZStore{
 			Aggregate: "MAX",
 		}, KeyCommunityPostSetPrefix+communityName, orderKey)
-		client.Expire(key, 60*time.Second)
+		Client.Expire(key, 60*time.Second)
 	}
 	return GetPost(key, page)
 }
