@@ -44,14 +44,14 @@ func main() {
 	defer redis.Close()
 
 	// Redis预热
-	warmUp := redis.NewRedisWarmUp()
-	if err := warmUp.WarmUpAll(); err != nil {
-		zap.L().Error("Redis预热失败", zap.Error(err))
-		// 预热失败不中断启动，只记录错误
-	}
+	//warmUp := redis.NewRedisWarmUp()
+	//if err := warmUp.WarmUpAll(); err != nil {
+	//	zap.L().Error("Redis预热失败", zap.Error(err))
+	//	// 预热失败不中断启动，只记录错误
+	//}
 
 	// 初始化定时任务
-	if err := redis.SyncExpiringVotes(7 * 24 * 3600 * 365); err != nil {
+	if err := redis.SyncExpiringVotes(7 * 24 * 3600); err != nil {
 		zap.L().Error("同步失败", zap.Error(err))
 	} else {
 		zap.L().Info("同步成功")

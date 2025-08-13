@@ -91,7 +91,7 @@ func GetCommunityPostIDsInOrder(p *models.ParamPostList) ([]string, error) {
 		pipeline := Client.Pipeline()
 		pipeline.ZInterStore(key, redis.ZStore{
 			Aggregate: "MAX", // 将两个zset函数聚合的时候 求最大值
-		}, cKey, orderkey)                   // zinterstore 计算
+		}, cKey, orderkey) // zinterstore 计算
 		pipeline.Expire(key, 60*time.Second) // 设置超时时间
 		_, err := pipeline.Exec()
 		if err != nil {

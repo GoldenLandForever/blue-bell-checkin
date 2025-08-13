@@ -94,32 +94,88 @@ func consumePostMessages(client sarama.Client) {
 	}
 	defer consumer.Close()
 
-	partitionConsumer, err := consumer.ConsumePartition("Post", 0, sarama.OffsetNewest)
+	partitionConsumer, err := consumer.ConsumePartition("Post-0", 0, sarama.OffsetNewest)
 	if err != nil {
 		zap.L().Error("post consume partition failed", zap.Error(err))
 		return
 	}
 	defer partitionConsumer.Close()
+	partitionConsumer10, err := consumer.ConsumePartition("Post-10", 0, sarama.OffsetNewest)
+	if err != nil {
+		zap.L().Error("post consume partition failed", zap.Error(err))
+		return
+	}
+	defer partitionConsumer10.Close()
+	partitionConsumer100, err := consumer.ConsumePartition("Post-100", 0, sarama.OffsetNewest)
+	if err != nil {
+		zap.L().Error("post consume partition failed", zap.Error(err))
+		return
+	}
+	defer partitionConsumer100.Close()
+	partitionConsumer200, err := consumer.ConsumePartition("Post-200", 0, sarama.OffsetNewest)
+	if err != nil {
+		zap.L().Error("post consume partition failed", zap.Error(err))
+		return
+	}
+	defer partitionConsumer200.Close()
 
 	for {
 		select {
-		case msg := <-partitionConsumer.Messages():
+		case msg := <-partitionConsumer200.Messages():
 			// 解析消息
-			var post models.Post
-			if err := json.Unmarshal(msg.Value, &post); err != nil {
-				zap.L().Error("unmarshal post message failed", zap.Error(err))
-				continue
-			}
-			// 给帖子作者加积分 (发布帖子+5分)
-			if err := addPoints(int64(post.AuthorId), 5, "发布帖子", "post", strconv.FormatUint(post.PostID, 10)); err != nil {
-				zap.L().Error("add points for post author failed", zap.Error(err))
-			} else {
-				fmt.Printf("add points for post author successfully, postID:%v\n", post.PostID)
-			}
+			processMessage(msg, "高优先级")
+		default:
+			select {
+			case msg := <-partitionConsumer100.Messages():
+				processMessage(msg, "中优先级")
+			default:
+				select {
+				case msg := <-partitionConsumer10.Messages():
+					processMessage(msg, "低优先级")
+				default:
+					select {
+					case msg := <-partitionConsumer.Messages():
+						processMessage(msg, "超低优先级")
+					default:
+					}
 
+				}
+
+			}
+		}
+		select {
 		case err := <-partitionConsumer.Errors():
 			zap.L().Error("post consumer error", zap.Error(err))
+		case err := <-partitionConsumer10.Errors():
+			zap.L().Error("post consumer error", zap.Error(err))
+		case err := <-partitionConsumer100.Errors():
+			zap.L().Error("post consumer error", zap.Error(err))
+		case err := <-partitionConsumer200.Errors():
+			zap.L().Error("post consumer error", zap.Error(err))
+		default:
+			// 无错误
 		}
+	}
+}
+
+func processMessage(msg *sarama.ConsumerMessage, priority string) {
+	var post models.Post
+	if err := json.Unmarshal(msg.Value, &post); err != nil {
+		zap.L().Error("unmarshal post message failed",
+			zap.String("priority", priority),
+			zap.Error(err))
+		return
+	}
+
+	if err := addPoints(int64(post.AuthorId), 5, "发布帖子", "post", strconv.FormatUint(post.PostID, 10)); err != nil {
+		zap.L().Error("add points failed",
+			zap.String("priority", priority),
+			zap.Uint64("post_id", post.PostID),
+			zap.Error(err))
+	} else {
+		zap.L().Info("points added",
+			zap.String("priority", priority),
+			zap.Uint64("post_id", post.PostID))
 	}
 }
 

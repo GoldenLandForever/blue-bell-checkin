@@ -44,14 +44,39 @@ func CreatePostHandler(c *gin.Context) {
 	kafkaClient := kafka.GetKafkaClient()
 	// 将积分变动对象序列化为JSON
 	scoreData, err := json.Marshal(post)
+
 	if err != nil {
 		zap.L().Error("序列化积分消息失败", zap.Error(err))
 		return
 	}
-	// 发送积分消息到Kafka
-	if err := kafkaClient.SendMessage("Post", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
-		zap.L().Error("发送积分消息失败", zap.Error(err))
+	// 获取用户积分
+	points := logic.GetPoints(userID)
+	//根据积分区分优先级
+	if points > 10 && points < 100 {
+		// 积分大于10，设置为低优先级
+		if err := kafkaClient.SendMessage("Post-10", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
+			zap.L().Error("发送积分消息失败", zap.Error(err))
+		}
+	} else if points >= 100 && points < 200 {
+		// 积分大于100，设置为中优先级
+		if err := kafkaClient.SendMessage("Post-100", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
+			zap.L().Error("发送积分消息失败", zap.Error(err))
+		}
+	} else if points >= 200 {
+		// 积分大于200，设置为高优先级
+		if err := kafkaClient.SendMessage("Post-200", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
+			zap.L().Error("发送积分消息失败", zap.Error(err))
+		}
+	} else {
+		// 积分小于10，设置为最低优先级
+		if err := kafkaClient.SendMessage("Post-0", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
+			zap.L().Error("发送积分消息失败", zap.Error(err))
+		}
 	}
+	// // 发送积分消息到Kafka
+	// if err := kafkaClient.SendMessage("Post", []byte(fmt.Sprintf("%d", userID)), scoreData); err != nil {
+	// 	zap.L().Error("发送积分消息失败", zap.Error(err))
+	// }
 }
 
 // PostListHandler 分页获取帖子列表

@@ -16,6 +16,24 @@ go 并发查
 
 压测报告：
 
+注册用户
+
+```
+#powershell
+1..100 | ForEach-Object { 
+    $user = "testuser_$_"
+    $pass = "Password@$_"
+    $email = $user+"@test.com"
+    $ConfirmPassword = "Password@$_"
+    $signup = Invoke-RestMethod -Uri "http://localhost:8081/api/v1/signup" -Method Post -Body (@{username=$user; password=$pass;email=$email;ConfirmPassword=$ConfirmPassword} | ConvertTo-Json) -ContentType "application/json"
+    $login = Invoke-RestMethod -Uri "http://localhost:8081/api/v1/login" -Method Post -Body (@{username=$user; password=$pass} | ConvertTo-Json) -ContentType "application/json"
+    $login.access_token | Out-File -Append -FilePath "user_tokens.txt"
+    Write-Host "用户 $_ 创建成功"
+}
+```
+
+
+
 ```shell
 go-wrk -c 50 -d 30 -T 5000 http://localhost:8081/api/v1/posts
 Running 30s test @ http://localhost:8081/api/v1/posts

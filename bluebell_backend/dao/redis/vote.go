@@ -114,13 +114,13 @@ func CreatePost(postID, userID uint64, title, summary string, CommunityID uint64
 	votedKey := KeyPostVotedZSetPrefix + strconv.Itoa(int(postID))
 	communityKey := KeyCommunityPostSetPrefix + strconv.Itoa(int(CommunityID))
 	postInfo := map[string]interface{}{
-		"title":    title,
-		"summary":  summary,
-		"post:id":  postID,
-		"user:id":  userID,
-		"time":     now,
-		"votes":    1,
-		"comments": 0,
+		"title":       title,
+		"summary":     summary,
+		"post:id":     postID,
+		"user:id":     userID,
+		"create_time": now,
+		"votes":       1,
+		"comments":    0,
 	}
 
 	// 事务操作

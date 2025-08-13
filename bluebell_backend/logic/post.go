@@ -56,7 +56,7 @@ func GetPostById(postID uint64) (data *models.ApiPostDetail, err error) {
 	redispost, err := redis.Client.HGetAll(redisKey).Result()
 	if err == nil && len(redispost) > 0 {
 		// 解析Redis中的数据
-		authorID, _ := strconv.ParseUint(redispost["author_id"], 10, 64)
+		authorID, _ := strconv.ParseUint(redispost["user_id"], 10, 64)
 		communityID, _ := strconv.ParseUint(redispost["community_id"], 10, 64)
 
 		// 解析时间字符串
@@ -362,4 +362,16 @@ func PostSearch(p *models.ParamPostList) (*models.ApiPostDetailRes, error) {
 		res.List = append(res.List, postDetail)
 	}
 	return &res, nil
+}
+
+// getPoints 根据用户ID获取积分
+func GetPoints(userID uint64) int64 {
+	points, err := mysql.GetPointsByID(userID)
+	if err != nil {
+		zap.L().Error("mysql.getPointsByID() failed",
+			zap.Uint64("userID", userID),
+			zap.Error(err))
+		return 0
+	}
+	return points
 }

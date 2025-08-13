@@ -4,8 +4,9 @@ import (
 	"bluebell_backend/models"
 	"database/sql"
 	"errors"
-	"github.com/jmoiron/sqlx"
 	"strings"
+
+	"github.com/jmoiron/sqlx"
 
 	"go.uber.org/zap"
 )
@@ -124,5 +125,15 @@ func GetPostListTotalCount(p *models.ParamPostList) (count int64, err error) {
 	// %keyword%
 	p.Search = "%" + p.Search + "%"
 	err = Db.Get(&count, sqlStr, p.Search, p.Search)
+	return
+}
+
+func GetPointsByID(userID uint64) (points int64, err error) {
+	sqlStr := `select points from user_points where user_id = ?`
+	err = Db.Get(&points, sqlStr, userID)
+	if err != nil {
+		zap.L().Error("db.Get(&points, sqlStr) failed", zap.Error(err))
+		return 0, err
+	}
 	return
 }
