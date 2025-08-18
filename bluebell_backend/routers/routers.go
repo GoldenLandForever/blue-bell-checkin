@@ -66,6 +66,13 @@ func SetupRouter(mode string) *gin.Engine {
 		v1.GET("/ping", func(c *gin.Context) {
 			c.String(http.StatusOK, "pong")
 		})
+
+		checkinGroup := v1.Group("/checkins")
+		{
+			checkinGroup.POST("", controller.DailyHandler)
+			checkinGroup.GET("/calendar", controller.CalendarHandler)
+			checkinGroup.POST("/retroactive", controller.RetroactiveHandler)
+		}
 	}
 
 	pprof.Register(r) // 注册pprof相关路由

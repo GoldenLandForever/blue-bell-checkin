@@ -1,0 +1,116 @@
+syntax = "proto3"; // 版本声明，使用Protocol Buffers v3版本
+
+option go_package = "bluebell_backend/pb";
+
+package pb; // 包名
+
+// ==========================
+// 🎯 签到服务定义
+// ==========================
+service CheckinService {
+  // 用户签到
+  rpc UserCheckin (UserCheckinRequest) returns (UserCheckinResponse);
+  
+  // 获取签到状态
+  rpc GetCheckinStatus (CheckinStatusRequest) returns (CheckinStatusResponse);
+  
+//  // 获取签到排行榜
+//  rpc GetCheckinRank (CheckinRankRequest) returns (CheckinRankResponse);
+}
+
+// ==========================
+// 📋 签到请求消息
+// ==========================
+message UserCheckinRequest {
+  uint64 user_id = 1;           // 用户ID
+  int64 timestamp = 2;          // 签到时间戳
+  string checkin_type = 3;      // 签到类型：normal/补签/活动签到
+}
+
+// ==========================
+// 📊 签到响应消息
+// ==========================
+message UserCheckinResponse {
+  bool success = 1;             // 是否成功
+  string message = 2;           // 提示信息
+  int32 continuous_days = 3;    // 连续签到天数
+  int32 total_days = 4;        // 总签到天数
+  int32 remain_retro_times = 5;
+}
+
+// ==========================
+// 🔍 签到状态查询请求
+// ==========================
+message CheckinStatusRequest {
+  uint64 user_id = 1;           // 用户ID
+  int64 timestamp = 2;
+}
+
+// ==========================
+// 📈 签到状态查询响应
+// ==========================
+message CheckinStatusResponse {
+  repeated int32 checked_in_days = 1; // 当月签到日期序号，使用repeated表示数组
+  repeated int32 retro_checked_in_days = 2;    // 当月补签日期序号，使用repeated表示数组
+}
+
+//// ==========================
+//// 📜 签到记录查询请求
+//// ==========================
+//message CheckinRecordsRequest {
+//  uint64 user_id = 1;           // 用户ID
+//  int32 page = 2;              // 页码（从1开始）
+//  int32 page_size = 3;         // 每页条数
+//  string start_date = 4;       // 开始日期（格式：2024-01-01）
+//  string end_date = 5;         // 结束日期
+//}
+//
+//// ==========================
+//// 📋 签到记录查询响应
+//// ==========================
+//message CheckinRecordsResponse {
+//  repeated CheckinRecord records = 1;  // 签到记录列表
+//  int32 total_count = 2;               // 总记录数
+//  bool has_more = 3;                   // 是否有更多数据
+//}
+
+//// ==========================
+//// 📅 单条签到记录
+//// ==========================
+//message CheckinRecord {
+//  string checkin_date = 1;      // 签到日期
+//  int32 continuous_days = 2;    // 当日连续天数
+//  int32 reward_points = 3;      // 当日奖励
+//  string checkin_type = 4;      // 签到类型
+//  int64 checkin_time = 5;       // 签到时间戳
+//}
+//
+//// ==========================
+//// 🏆 排行榜查询请求
+//// ==========================
+//message CheckinRankRequest {
+//  string rank_type = 1;         // 排行类型：continuous/total/monthly
+//  int32 limit = 2;             // 返回条数限制
+//  uint64 current_user_id = 3;   // 当前用户ID（可选，用于显示用户排名）
+//}
+//
+//// ==========================
+//// 🥇 排行榜查询响应
+//// ==========================
+//message CheckinRankResponse {
+//  repeated RankItem ranks = 1;   // 排行榜数据
+//  int32 my_rank = 2;             // 我的排名（如果有current_user_id）
+//  int32 my_continuous_days = 3;  // 我的连续签到天数
+//}
+//
+//// ==========================
+//// 🎖️ 排行榜单项
+//// ==========================
+//message RankItem {
+//  uint64 user_id = 1;          // 用户ID
+//  string username = 2;         // 用户名
+//  string avatar = 3;           // 头像URL
+//  int32 rank = 4;              // 排名
+//  int32 continuous_days = 5;   // 连续签到天数
+//  int32 total_days = 6;        // 总签到天数
+//}

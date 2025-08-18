@@ -5,6 +5,7 @@ import (
 	"bluebell_backend/dao/mysql"
 	"bluebell_backend/dao/redis"
 	"bluebell_backend/logger"
+	"bluebell_backend/pkg/grpc/checkin"
 	"bluebell_backend/pkg/kafka"
 	"bluebell_backend/pkg/snowflake"
 	"bluebell_backend/routers"
@@ -72,6 +73,9 @@ func main() {
 	if err := controller.InitTrans("zh"); err != nil {
 		fmt.Printf("init validator Trans failed,err:%v\n", err)
 		return
+	}
+	if err := checkin.InitClient("127.0.0.1:8972"); err != nil {
+		fmt.Printf("init checkin grpc failed,err:%v\n", err)
 	}
 	// 注册路由
 	r := routers.SetupRouter(settings.Conf.Mode)

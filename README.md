@@ -20,17 +20,30 @@ go 并发查
 
 ```
 #powershell
-1..100 | ForEach-Object { 
+21..100 | ForEach-Object { 
     $user = "testuser_$_"
     $pass = "Password@$_"
     $email = $user+"@test.com"
     $ConfirmPassword = "Password@$_"
-    $signup = Invoke-RestMethod -Uri "http://localhost:8081/api/v1/signup" -Method Post -Body (@{username=$user; password=$pass;email=$email;ConfirmPassword=$ConfirmPassword} | ConvertTo-Json) -ContentType "application/json"
+    $signup = Invoke-RestMethod -Uri "http://localhost:8081/api/v1/signup" -Method Post -Body (@{username=$user; password=$pass;email=$email;confirm_password=$ConfirmPassword} | ConvertTo-Json) -ContentType "application/json"
     $login = Invoke-RestMethod -Uri "http://localhost:8081/api/v1/login" -Method Post -Body (@{username=$user; password=$pass} | ConvertTo-Json) -ContentType "application/json"
     $login.access_token | Out-File -Append -FilePath "user_tokens.txt"
     Write-Host "用户 $_ 创建成功"
 }
 ```
+
+登录用户获取token
+
+```
+#他妈的，手动来好了
+
+```
+
+
+
+
+
+
 
 
 
@@ -60,7 +73,7 @@ stddev:                 66.508ms
 ```
 
 ```shell
-go-wrk -c 100 -d 10 -T 5000 http://localhost:8081/api/v1/post/1
+go-wrk -c 100 -d 10 -T 5000 http://localhost:8081/api/v1/post/185445628082388993
 Running 10s test @ http://localhost:8081/api/v1/post/1
   100 goroutine(s) running concurrently
 21279 requests in 10.098893029s, 2.29MB read
