@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bluebell_backend/models"
 	"bluebell_backend/pb"
 	"bluebell_backend/pkg/grpc/checkin"
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,11 @@ import (
 
 func DailyHandler(c *gin.Context) {
 	instance := checkin.GetClient()
-	checkinResp, err := instance.Client.UserCheckin(c, &pb.UserCheckinRequest{})
+	var checkinmodel models.Checkin
+	if err := c.ShouldBindJSON(&checkinmodel); err != nil {
+		zap.L().Error("DailyHandler - ShouldBindJSON", zap.Error(err))
+	}
+	checkinResp, err := instance.Client.UserCheckin(c, &pb.UserCheckinRequest{UserId: checkinmodel.UserID, Timestamp: checkinmodel.TimeStamp, CheckinType: checkinmodel.CheckinType})
 	if err != nil {
 		zap.L().Error("could not checkin", zap.Error(err))
 		return
