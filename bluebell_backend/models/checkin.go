@@ -5,3 +5,9 @@ type Checkin struct {
 	TimeStamp   int64  `db:"time_stamp" json:"time_stamp,string"`
 	CheckinType string `db:"checkin_type" json:"checkin_type"`
 }
+
+type CheckinResp struct {
+	UserID         uint64 `db:"user_id" json:"user_id,string"`
+	ContinuousDays int32  `db:"continuous_days" json:"continuous_days,string"`
+	CheckinType    string `db:"checkin_type" json:"checkin_type"`
+}

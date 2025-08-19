@@ -28,6 +28,8 @@ func InitConsumer() error {
 	// 创建post消费者
 	go consumePostMessages(kafkaClient.client)
 
+	go consumeCheckinMessages(kafkaClient.client)
+
 	zap.L().Info("kafka consumers started successfully")
 	return nil
 }
@@ -179,6 +181,42 @@ func processMessage(msg *sarama.ConsumerMessage, priority string) {
 	}
 }
 
+func consumeCheckinMessages(client sarama.Client) {
+	consumer, err := sarama.NewConsumerFromClient(client)
+	if err != nil {
+		zap.L().Error("new checkin consumer failed", zap.Error(err))
+		return
+	}
+	defer consumer.Close()
+
+	partitionConsumer, err := consumer.ConsumePartition("Checkin", 0, sarama.OffsetNewest)
+	if err != nil {
+		zap.L().Error("comment consume partition failed", zap.Error(err))
+		return
+	}
+	defer partitionConsumer.Close()
+
+	for {
+		select {
+		case msg := <-partitionConsumer.Messages():
+			// 解析消息
+			var checkinresp models.CheckinResp
+			if err := json.Unmarshal(msg.Value, &checkinresp); err != nil {
+				zap.L().Error("unmarshal checkin message failed", zap.Error(err))
+				continue
+			}
+
+			// 给签到者加积分 (评论+2分)
+			if err := addPoints(int64(checkinresp.UserID), 1, checkinresp.CheckinType, checkinresp.CheckinType, strconv.FormatUint(checkinresp.UserID, 10)); err != nil {
+				zap.L().Error("add points for checkin failed", zap.Error(err))
+			}
+
+		case err := <-partitionConsumer.Errors():
+			zap.L().Error("checkin consumer error", zap.Error(err))
+		}
+	}
+}
+
 // 添加积分
 func addPoints(userID int64, points int, description, extType, extID string) error {
 	// 1. 查询用户当前积分
@@ -220,6 +258,12 @@ func addPoints(userID int64, points int, description, extType, extID string) err
 			transactionType = 3 // 评论
 		} else if description == "帖子被评论" {
 			transactionType = 6 // 被评论 (扩展原有类型)
+		}
+	case "checkin":
+		if description == "每日签到" {
+			transactionType = 4
+		} else if description == "补签" {
+			transactionType = 5
 		}
 	}
 
