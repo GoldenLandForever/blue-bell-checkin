@@ -44,6 +44,9 @@ func main() {
 
 	defer redis.Close()
 
+	// 启动WebSocket管理器
+	go controller.GetManager().Run()
+
 	// Redis预热
 	//warmUp := redis.NewRedisWarmUp()
 	//if err := warmUp.WarmUpAll(); err != nil {

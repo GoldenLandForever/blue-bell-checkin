@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/gin-swagger"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 
 	"github.com/gin-contrib/pprof"
@@ -63,9 +63,16 @@ func SetupRouter(mode string) *gin.Engine {
 		v1.POST("/comment", controller.CommentHandler)    // 评论
 		v1.GET("/comment", controller.CommentListHandler) // 评论列表
 
+		//关注功能
+		v1.POST("/follow", controller.FollowHandler) // 关注用户
+		v1.DELETE("/unfollow", controller.UnFollowHandler)
+
 		v1.GET("/ping", func(c *gin.Context) {
 			c.String(http.StatusOK, "pong")
 		})
+
+		// WebSocket连接
+		v1.GET("/ws", controller.WebSocketHandler)
 
 		checkinGroup := v1.Group("/checkins")
 		{
