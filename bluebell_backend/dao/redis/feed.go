@@ -2,6 +2,7 @@ package redis
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -54,6 +55,67 @@ func GetUserFeed(userID uint64, offset, limit int64) ([]string, error) {
 	// 使用 ZREVRANGE 命令获取用户的feed流，按时间倒序排列
 	feedKey := KeyFeedPrefix + strconv.FormatUint(userID, 10)
 	return Client.ZRevRange(feedKey, offset, offset+limit-1).Result()
+}
+
+// PullOfflineFeed 拉取关注用户在离线期间的动态
+func PullOfflineFeed(userID uint64) error {
+	// 1. 获取用户关注列表
+	followKey := KeyFollowSetPrefix + strconv.FormatUint(userID, 10)
+	following, err := Client.SMembers(followKey).Result()
+	if err != nil {
+		return err
+	}
+
+	// 2. 获取7天前的时间戳
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7).Unix()
+	now := time.Now().Unix()
+
+	// 3. 用户的feed key
+	feedKey := KeyFeedPrefix + strconv.FormatUint(userID, 10)
+
+	// 4. 使用管道批量操作
+	pipeline := Client.Pipeline()
+
+	// 5. 遍历关注列表，获取每个用户的最新动态
+	for _, followIDStr := range following {
+		followID, err := strconv.ParseUint(followIDStr, 10, 64)
+		if err != nil {
+			continue
+		}
+
+		// 获取该用户最近7天的帖子
+		postKeys := KeyPostInfoHashPrefix + "*" // 获取所有帖子
+		keys, err := Client.Keys(postKeys).Result()
+		if err != nil {
+			continue
+		}
+
+		// 遍历所有帖子，找出该用户在离线期间发布的帖子
+		for _, key := range keys {
+			postData, err := Client.HGetAll(key).Result()
+			if err != nil {
+				continue
+			}
+
+			// 检查帖子作者和发布时间
+			authorID, _ := strconv.ParseUint(postData["author_id"], 10, 64)
+			createTime, _ := strconv.ParseInt(postData["create_time"], 10, 64)
+
+			if authorID == followID && createTime >= sevenDaysAgo && createTime <= now {
+				// 提取帖子ID
+				postID := strings.TrimPrefix(key, KeyPostInfoHashPrefix)
+				// 将帖子添加到用户的feed流中
+				pipeline.ZAdd(feedKey, redis.Z{
+					Score:  float64(createTime),
+					Member: postID,
+				})
+			}
+		}
+	}
+
+	// 6. 执行管道操作
+	_, err = pipeline.Exec()
+	return err
 }
 
 // RemoveExpiredFeed 删除过期的feed条目（可选：保留最近7天或最新1000条）

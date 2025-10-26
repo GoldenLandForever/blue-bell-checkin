@@ -29,7 +29,13 @@ func GetUserFeedHandler(c *gin.Context) {
 		ResponseError(c, CodeNotLogin)
 		return
 	}
-
+	//获取离线时间的feed流
+	err = redis.PullOfflineFeed(userID)
+	if err != nil {
+		zap.L().Error("redis.PullOfflineFeed failed", zap.Error(err))
+		ResponseError(c, CodeServerBusy)
+		return
+	}
 	// 2. 获取feed流中的帖子ID列表
 	offset := (p.Page - 1) * p.Size
 	postIDs, err := redis.GetUserFeed(userID, int64(offset), int64(p.Size))
