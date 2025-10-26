@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bluebell_backend/dao/redis"
 	"bluebell_backend/logic"
 	"bluebell_backend/models"
 	"bluebell_backend/pkg/kafka"
@@ -39,6 +40,14 @@ func CreatePostHandler(c *gin.Context) {
 		ResponseError(c, CodeServerBusy)
 		return
 	}
+
+	// 推送到粉丝的feed流中
+	go func() {
+		if err := redis.PushFeedToFollowers(userID, post.PostID); err != nil {
+			zap.L().Error("push feed to followers failed", zap.Error(err))
+		}
+	}()
+
 	// 3、返回响应
 	ResponseSuccess(c, nil)
 	kafkaClient := kafka.GetKafkaClient()

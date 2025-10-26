@@ -11,6 +11,7 @@ import (
 	"bluebell_backend/routers"
 	"bluebell_backend/settings"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -46,6 +47,20 @@ func main() {
 
 	// 启动WebSocket管理器
 	go controller.GetManager().Run()
+
+	// 启动离线用户清理任务
+	go func() {
+		ticker := time.NewTicker(time.Minute) // 每分钟清理一次
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := redis.CleanupOfflineUsers(); err != nil {
+					zap.L().Error("cleanup offline users failed", zap.Error(err))
+				}
+			}
+		}
+	}()
 
 	// Redis预热
 	//warmUp := redis.NewRedisWarmUp()

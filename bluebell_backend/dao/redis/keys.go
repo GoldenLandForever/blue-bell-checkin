@@ -10,6 +10,8 @@ const (
 	//KeyPostVotedDownSetPrefix = "bluebell-plus:post:voted:up:"
 	KeyPostVotedZSetPrefix    = "bluebell-plus:post:voted:" // zSet;记录用户及投票类型;参数是post_id
 	KeyCommunityPostSetPrefix = "bluebell-plus:community:"  // set保存每个分区下帖子的id
-	KeyFollowSetPrefix        = "bluebell-plus:follow:"     // set保存用户关注列表
-	KeyFollowerSetPrefix      = "bluebell-plus:follower:"   // set保存用户粉丝列表
+	KeyOnlineZSet            = "bluebell-plus:online:users" // zset;保存在线用户及最后心跳时间
+	KeyFeedPrefix            = "bluebell-plus:feed:"        // zset;用户的feed流
+	KeyFollowSetPrefix        = "bluebell-plus:follow:"      // set保存用户关注列表
+	KeyFollowerSetPrefix      = "bluebell-plus:follower:"    // set保存用户粉丝列表
 )

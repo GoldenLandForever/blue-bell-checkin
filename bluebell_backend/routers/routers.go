@@ -74,6 +74,9 @@ func SetupRouter(mode string) *gin.Engine {
 		// WebSocket连接
 		v1.GET("/ws", controller.WebSocketHandler)
 
+		// Feed流
+		v1.GET("/feed", controller.GetUserFeedHandler) // 获取个人feed流
+
 		checkinGroup := v1.Group("/checkins")
 		{
 			checkinGroup.POST("", controller.DailyHandler)

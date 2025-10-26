@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bluebell_backend/dao/redis"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -105,6 +106,11 @@ func (c *Client) readPump() {
 		// 根据消息类型处理
 		switch msg.Type {
 		case "ping":
+			// 更新用户在线状态
+			if err := redis.UpdateUserOnline(c.UserID); err != nil {
+				zap.L().Error("update user online status failed", zap.Error(err))
+			}
+
 			// 收到ping消息，回复pong
 			response := Message{
 				Type: "pong",
